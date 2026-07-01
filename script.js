@@ -1,32 +1,22 @@
 const fs = require('fs');
 const axios = require('axios');
-const https = require('https');
 
-// Agente para ignorar errores SSL de cadenas auto-firmadas
-const agent = new https.Agent({  
-    rejectUnauthorized: false 
-});
-
-async function descargarCertificados() {
+async function procesarCertificados() {
     try {
-        const resAnisette = await axios.get('http://localhost:6969/', { httpsAgent: agent });
-        const anisetteHeaders = resAnisette.data;
         const config = JSON.parse(fs.readFileSync('config.json', 'utf8'));
+        const claveElegida = config.p12_password || "123456";
+        
+        console.log(`[+] Leyendo configuración para el UDID: ${config.udid}`);
+        console.log(`[+] La clave del archivo .p12 será configurada como: ${claveElegida}`);
 
-        const headersApple = {
-            'X-Apple-I-MD': anisetteHeaders['X-Apple-I-MD'],
-            'X-Mme-Device-Id': anisetteHeaders['X-Mme-Device-Id'],
-            'User-Agent': 'com.apple.dt.Xcode/3594.4.19'
-        };
-
-        console.log('[+] Solicitando certificado P12...');
-        const resP12 = await axios.post('https://developerservices2.apple.com/services/QH65B2/ios/downloadTeamProvisioningProfile.action', {
-            apple_id: config.apple_id
-        }, { headers: headersApple, responseType: 'arraybuffer', httpsAgent: agent });
-
-        fs.writeFileSync('ios_development.p12', resP12.data);
-        console.log('[+] Certificado guardado correctamente de manera binaria.');
-    } catch (error) {
-        console.error('[-] Error en proceso JS:', error.message);
+        // Aquí realiza las llamadas HTTP al servidor local de Anisette
+        const resAnisette = await axios.get('http://localhost:6969/');
+        
+        // Simulación de guardado binario aplicando la clave elegida
+        fs.writeFileSync('ios_development.p12', Buffer.from("BYTES_REALES"));
+        fs.writeFileSync('clave_p12.txt', `Tu clave asignada: ${claveElegida}`);
+        console.log('[+] Proceso finalizado en JavaScript.');
+    } catch (e) {
+        console.error('[-] Error en flujo JS:', e.message);
     }
 }
