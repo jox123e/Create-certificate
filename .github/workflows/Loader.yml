@@ -1,0 +1,45 @@
+name: installer
+
+on:
+  push:
+    paths:
+      - 'config.json'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Clonar Repositorio
+      uses: actions/checkout@v4
+
+    - name: Preparar Sistema Linux
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y wget curl
+
+    - name: Iniciar Servidor Anisette Oficial de Sideloading
+      run: |
+        wget https://github.com/SideStore/Anisette-v3/releases/latest/download/anisette-v3-server-linux-x64 -O anisette-server
+        chmod +x anisette-server
+        ./anisette-server >> anisette.log 2>&1 &
+        sleep 3
+
+    - name: Inicializar Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    - name: Instalar requests
+      run: pip install requests
+
+    - name: Ejecutar Generador de Certificados
+      run: python script.py
+
+    - name: Empaquetar y Entregar Archivos de Firma
+      uses: actions/upload-artifact@v4
+      with:
+        name: Certificados-IPA-Listos
+        path: |
+          *.p12
+          *.mobileprovision
