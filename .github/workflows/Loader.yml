@@ -21,7 +21,7 @@ jobs:
     - name: Instalar Dependencias del Sistema
       run: |
         sudo apt-get update
-        sudo apt-get install -y ldmd libxml2-dev libssl-dev jq
+        sudo apt-get install -y libxml2-dev libssl-dev jq
 
     - name: Iniciar Servidor Anisette Oficial (Docker)
       run: |
@@ -30,21 +30,20 @@ jobs:
 
     - name: Descargar Herramienta de Aprovisionamiento Real
       run: |
-        # Descargamos el binario especializado en interactuar con el portal de Apple
-        wget https://github.com/asdfzxcv/msm/releases/latest/download/msm-linux-x64 -O msm
+        # Usamos la API de GitHub para descargar la última versión de msm de forma segura
+        curl -L https://github.com/asdfzxcv/msm/releases/latest/download/msm-linux-x64 -o msm
         chmod +x msm
 
     - name: Ejecutar Autenticación y Descarga Real
       run: |
-        # 1. Extraer las credenciales reales de tu config.json usando jq
+        # Extraer las credenciales de tu config.json usando jq
         APPLE_ID=$(jq -r '.apple_id' config.json)
         PASSWORD=$(jq -r '.password' config.json)
         UDID=$(jq -r '.udid' config.json)
 
         echo "[+] Conectando con Apple Developer Network para: $APPLE_ID"
         
-        # 2. Llamar a la herramienta apuntando al servidor Anisette de Docker
-        # Esto genera el intercambio real de llaves y descarga los binarios legítimos de Apple
+        # Llamar a la herramienta apuntando al servidor Anisette de Docker
         ./msm --anisette "http://localhost:6969" login "$APPLE_ID" "$PASSWORD"
         ./msm udid register "$UDID"
         ./msm certificate download --output ios_development.p12
