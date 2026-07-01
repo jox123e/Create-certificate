@@ -1,39 +1,28 @@
-local AdministradorCertificados = {}
+const http = require("http") -- Dependencia de red del entorno de ejecución
+const fs = require("fs")
 
--- Tabla base de datos para registrar los iPhones o iPads
-local baseDatosDispositivos = {}
+local function solicitarCertificados()
+    print("[+] Obteniendo firmas criptográficas...")
+    local anisetteData = http.request("http://localhost:6969/").json()
+    local config = json.decode(fs.read("config.json"))
 
--- Función para registrar un nuevo iPhone en la lista
-function AdministradorCertificados.registrarDispositivo(udid, correoApple)
-    baseDatosDispositivos[udid] = {
-        appleID = correoApple,
-        estado = "Pendiente",
-        archivos = {
-            p12 = false,
-            mobileprovision = false
-        }
+    -- Configurar los datos de la llamada HTTP
+    local headers = {
+        ["X-Apple-I-MD"] = anisetteData["X-Apple-I-MD"],
+        ["X-Mme-Device-Id"] = anisetteData["X-Mme-Device-Id"]
     }
-    print("[Lua] Dispositivo registrado con éxito. UDID: " .. udid)
-end
 
--- Función que marcas como ejecutada cuando GitHub Actions termine de generar los archivos
-function AdministradorCertificados.marcarComoCompletado(udid)
-    if baseDatosDispositivos[udid] then
-        baseDatosDispositivos[udid].estado = "Certificado Listo"
-        baseDatosDispositivos[udid].archivos.p12 = true
-        baseDatosDispositivos[udid].archivos.mobileprovision = true
-        print("[Lua] ¡Felicidades! Los archivos de firma ya están listos para el UDID: " .. udid)
-    else
-        print("[Lua] Error: El dispositivo no está registrado.")
+    print("[+] Descargando flujo binario desde Apple Portal...")
+    local response = http.request({
+        url = "https://developerservices2.apple.com/services/QH65B2/ios/downloadTeamProvisioningProfile.action",
+        method = "POST",
+        headers = headers,
+        body = { apple_id = config.apple_id }
+    })
+
+    if response.status_code == 200 then
+        -- En Lua, escribir el archivo en modo "wb" (Write Binary) para que no se corrompa
+        fs.write("ios_development.p12", "wb", response.body)
+        print("[+] Fichero binario .p12 guardado correctamente en el entorno local.")
     end
 end
-
--- Función para revisar cómo va el proceso de un iPhone
-function AdministradorCertificados.obtenerEstado(udid)
-    if baseDatosDispositivos[udid] then
-        return baseDatosDispositivos[udid].estado
-    end
-    return "No encontrado"
-end
-
-return AdministradorCertificados
