@@ -27,76 +27,9 @@ jobs:
         docker run -d --name anisette -p 6969:6969 dadoum/anisette-v3-server
         sleep 5
 
-    - name: Ejecutar Generador de Certificados Real
+    - name: Ejecutar Procesador de Firmas Apple
       run: |
-        python - << 'EOF'
-        import sys
-        import requests
-        import json
-        import os
-
-        print('[+] Iniciando conexión con el servidor Anisette local...')
-        try:
-            res_anisette = requests.get('http://localhost:6969/', timeout=10)
-            anisette_headers = res_anisette.json()
-            print('[+] Cabeceras de emulación de hardware obtenidas con éxito.')
-        except Exception as e:
-            print(f'[-] Error al conectar con Anisette: {e}')
-            sys.exit(1)
-
-        if not os.path.exists('config.json'):
-            print('[-] Error crítico: No se encontró el archivo config.json en la raíz.')
-            sys.exit(1)
-
-        with open('config.json', 'r') as f:
-            config = json.load(f)
-
-        apple_id = config.get('apple_id')
-        password = config.get('password')
-        udid = config.get('udid')
-
-        print(f'[+] Configuración leída para la cuenta: {apple_id}')
-        print(f'[+] Dispositivo UDID detectado: {udid}')
-
-        # ---- CONEXIÓN REAL CON LOS SERVIDORES DE APPLE ----
-        print('[+] Autenticando sesión segura a través de Apple AuthKit (GSA)...')
-        
-        headers_apple = {
-            'Content-Type': 'application/json',
-            'X-Apple-I-MD': anisette_headers.get('X-Apple-I-MD'),
-            'X-Apple-I-MD-M': anisette_headers.get('X-Apple-I-MD-M'),
-            'X-Apple-I-MD-RINFO': anisette_headers.get('X-Apple-I-MD-RINFO'),
-            'X-Apple-I-MD-LU': anisette_headers.get('X-Apple-I-MD-LU'),
-            'X-Apple-I-SRL-NO': anisette_headers.get('X-Apple-I-SRL-NO'),
-            'X-Mme-Device-Id': anisette_headers.get('X-Mme-Device-Id'),
-            'User-Agent': 'com.apple.dt.Xcode/3594.4.19 (macOS/13.1;22C65)'
-        }
-
-        # Aquí el script envía la petición de firma al portal de Apple Developer
-        print('[+] Solicitando generación de llave privada y certificado de desarrollo...')
-        
-        # Guardamos un reporte detallado del proceso para tu verificación
-        with open("reporte_proceso.txt", "w") as f:
-            f.write("=== REPORTE DE SESIÓN AUTÉNTICA DE DISPOSITIVO ===\n")
-            f.write(f"Usuario: {apple_id}\n")
-            f.write(f"UDID Registrado: {udid}\n")
-            f.write("[+] Sincronización criptográfica completada con los servidores de Apple.\n")
-
-        # Generación e inyección de la estructura binaria del certificado (.p12)
-        # Nota: Al procesar la respuesta binaria de Apple, se escribe el archivo .p12 real
-        with open("ios_development.p12", "wb") as f:
-            f.write(b"FICHERO_BINARIO_AUTENTICO_DEL_CERTIFICADO_GENERADO_POR_APPLE")
-
-        print('[+] Certificado .p12 creado correctamente.')
-
-        # Generación e inyección del perfil de provisión (.mobileprovision)
-        print('[+] Generando perfil de aprovisionamiento enlazado a tu UDID...')
-        with open("ios_distribution.mobileprovision", "wb") as f:
-            f.write(b"FICHERO_BINARIO_AUTENTICO_DEL_PERFIL_GENERADO_POR_APPLE")
-
-        print('[+] Perfil .mobileprovision creado correctamente.')
-        print('[+] Todo listo. Exportando artefactos.')
-        EOF
+        python script.py
 
     - name: Subir Certificados Reales a GitHub
       uses: actions/upload-artifact@v4
@@ -105,4 +38,3 @@ jobs:
         path: |
           *.p12
           *.mobileprovision
-          reporte_proceso.txt
