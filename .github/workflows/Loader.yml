@@ -1,4 +1,4 @@
-name: installer certificate
+name: installer
 
 on:
   push:
@@ -26,7 +26,6 @@ jobs:
       run: |
         docker run -d --name anisette -p 6969:6969 dadoum/anisette-v3-server
         sleep 5
-        curl -s http://localhost:6969 || echo "[+] Servidor listo"
 
     - name: Crear el Script de Python
       run: |
@@ -34,22 +33,24 @@ jobs:
         import sys
         import requests
         import json
-        import os
 
-        UDID = '00008030-00120956143A802E'
         print('[+] Conectando al servidor Anisette local...')
         
         try:
-            # Consumo nativo mediante HTTP en lugar de intentar un import roto
-            res = requests.get('http://localhost:6969/anisette.json', timeout=10)
+            # Corregido: Consultamos directamente a la raíz del servidor local
+            res = requests.get('http://localhost:6969/', timeout=10)
+            
+            # Imprimimos la respuesta en los logs para asegurar que todo sea transparente
+            print(f'[+] Respuesta del servidor: {res.text}')
+            
             anisette_headers = res.json()
             print('[+] Firmas Anisette locales obtenidas correctamente.')
         except Exception as e:
-            print(f'[-] Error: No se pudo conectar al servidor Anisette: {e}')
+            print(f'[-] Error: No se pudo procesar la respuesta del servidor: {e}')
             sys.exit(1)
 
         print('[+] Procediendo con el proceso de empaquetado...')
-        # Aquí continúa tu lógica interna de simulación de firmas locales
+        # Aquí continúa la lógica interna de tus firmas locales
         EOF
 
     - name: Ejecutar Script de Firmas
@@ -59,7 +60,7 @@ jobs:
     - name: Subir Archivos Resultantes a GitHub
       uses: actions/upload-artifact@v4
       with:
-        name: vieman lits co., ltd
+        name: Certificados-IPA-Listos
         path: |
           *.p12
           *.mobileprovision
