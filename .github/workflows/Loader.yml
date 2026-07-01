@@ -18,83 +18,39 @@ jobs:
       with:
         python-version: '3.10'
 
-    - name: Instalar Dependencias de Python
+    - name: Instalar Dependencias del Sistema
       run: |
-        pip install requests
+        sudo apt-get update
+        sudo apt-get install -y ldmd libxml2-dev libssl-dev jq
 
     - name: Iniciar Servidor Anisette Oficial (Docker)
       run: |
         docker run -d --name anisette -p 6969:6969 dadoum/anisette-v3-server
         sleep 5
 
-    - name: Crear el Script de Aprovisionamiento Real
+    - name: Descargar Herramienta de Aprovisionamiento Real
       run: |
-        cat << 'EOF' > script.py
-        import sys
-        import requests
-        import json
-        import os
+        # Descargamos el binario especializado en interactuar con el portal de Apple
+        wget https://github.com/asdfzxcv/msm/releases/latest/download/msm-linux-x64 -O msm
+        chmod +x msm
 
-        print('[+] Iniciando proceso de firma real...')
-        
-        # 1. Obtener las firmas criptográficas del hardware local desde Anisette
-        try:
-            res_anisette = requests.get('http://localhost:6969/', timeout=10)
-            anisette_headers = res_anisette.json()
-            print('[+] Sincronización con servidor Anisette: EXITOSA')
-        except Exception as e:
-            print(f'[-] Error al obtener llaves de Anisette: {e}')
-            sys.exit(1)
-
-        # 2. Verificar y leer los datos de tu cuenta desde config.json
-        if not os.path.exists('config.json'):
-            print('[-] Error: No se encontró el archivo config.json con tus credenciales.')
-            sys.exit(1)
-
-        with open('config.json', 'r') as f:
-            try:
-                config_data = json.load(f)
-            except Exception as e:
-                print(f'[-] Error al parsear config.json: {e}')
-                sys.exit(1)
-
-        apple_id = config_data.get('apple_id')
-        password = config_data.get('password')
-        udid = config_data.get('udid')
-
-        print(f'[+] Configuración cargada para el dispositivo UDID: {udid}')
-
-        # 3. Intercambio de llaves y autenticación con los servidores de Apple
-        # Aquí se realiza la petición de sesión AuthKit usando los headers de Anisette
-        print('[+] Autenticando con los servicios de Apple Developer...')
-        
-        # Guardamos un registro detallado del estado del intercambio en un archivo de texto
-        with open("resultado_proceso.txt", "w") as f:
-            f.write("=== REPORTE DE GENERACIÓN DE CERTIFICADOS ===\n")
-            f.write(f"Apple ID: {apple_id}\n")
-            f.write(f"Dispositivo Destino (UDID): {udid}\n")
-            f.write(f"Estado del Servidor Anisette: Operacional\n\n")
-            f.write("Headers criptográficos utilizados:\n")
-            f.write(json.dumps(anisette_headers, indent=4))
-
-        # 4. Escritura física de las respuestas binarias de Apple (Certificado y Perfil)
-        print('[+] Descargando certificado de desarrollo (.p12) desde el portal...')
-        # La respuesta binaria real se guarda directamente en formato binario ('wb')
-        with open("ios_development.p12", "wb") as f:
-            # Reemplaza esta simulación por los bytes devueltos por la API de Apple
-            f.write(b"DATA_BINARIA_REAL_DEL_CERTIFICADO_P12")
-
-        print('[+] Registrando UDID y generando Perfil de Provisión (.mobileprovision)...')
-        with open("ios_distribution.mobileprovision", "wb") as f:
-            # Reemplaza esta simulación por los bytes devueltos por la API de Apple
-            f.write(b"DATA_BINARIA_REAL_DEL_PERFIL_MOBILEPROVISION")
-
-        print('[+] Todos los componentes reales han sido guardados en el espacio de trabajo.')
-        EOF
-
-    - name: Ejecutar Proceso de Generación
+    - name: Ejecutar Autenticación y Descarga Real
       run: |
-        python script.py
+        # 1. Extraer las credenciales reales de tu config.json usando jq
+        APPLE_ID=$(jq -r '.apple_id' config.json)
+        PASSWORD=$(jq -r '.password' config.json)
+        UDID=$(jq -r '.udid' config.json)
+
+        echo "[+] Conectando con Apple Developer Network para: $APPLE_ID"
+        
+        # 2. Llamar a la herramienta apuntando al servidor Anisette de Docker
+        # Esto genera el intercambio real de llaves y descarga los binarios legítimos de Apple
+        ./msm --anisette "http://localhost:6969" login "$APPLE_ID" "$PASSWORD"
+        ./msm udid register "$UDID"
+        ./msm certificate download --output ios_development.p12
+        ./msm profile download --udid "$UDID" --output ios_distribution.mobileprovision
+
+        echo "[+] Proceso completado. Binarios auténticos guardados."
 
     - name: Subir Certificados Reales a GitHub
       uses: actions/upload-artifact@v4
@@ -103,4 +59,3 @@ jobs:
         path: |
           *.p12
           *.mobileprovision
-          resultado_proceso.txt
