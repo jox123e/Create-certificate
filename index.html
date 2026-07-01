@@ -3,25 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Firmador Real - Configuración</title>
+    <title>Panel de Firmas con Key Personalizada</title>
     <style>
         body { font-family: -apple-system, sans-serif; background: #f5f5f7; padding: 20px; }
-        .box { background: #fff; padding: 20px; border-radius: 10px; max-width: 400px; margin: auto; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        input { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
-        button { width: 100%; background: #0071e3; color: #fff; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        .box { background: #fff; padding: 20px; border-radius: 12px; max-width: 400px; margin: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        h3 { text-align: center; color: #0071e3; }
+        label { font-weight: bold; display: block; margin-top: 10px; }
+        input { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; }
+        button { width: 100%; background: #0071e3; color: white; border: none; padding: 12px; border-radius: 8px; margin-top: 20px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
 <div class="box">
-    <h3>Generador de Parámetros de Cuenta</h3>
-    <input type="email" id="email" placeholder="Apple ID (Correo)">
-    <input type="password" id="pass" placeholder="Contraseña de Aplicación">
-    <input type="text" id="udid" placeholder="UDID de tu Dispositivo">
-    <button onclick="guardar()">Generar config.json</button>
+    <h3>Configuración de Firmas Real</h3>
+    
+    <label>Apple ID:</label>
+    <input type="email" id="email" placeholder="ejemplo@icloud.com">
+    
+    <label>Contraseña de Aplicación:</label>
+    <input type="password" id="pass" placeholder="abcd-efgh-ijkl-mnop">
+    
+    <label>UDID del iPhone:</label>
+    <input type="text" id="udid" value="00008030-00120956143A802E">
+    
+    <label style="color: #0071e3;">¡Elige la contraseña para tu .p12!:</label>
+    <input type="text" id="p12_pass" placeholder="Ej: mi_clave_123" value="123456">
+    
+    <button onclick="guardarJSON()">Generar config.json</button>
 </div>
 <script>
-function guardar() {
-    const obj = { apple_id: document.getElementById('email').value, password: document.getElementById('pass').value, udid: document.getElementById('udid').value };
+function guardarJSON() {
+    const obj = {
+        apple_id: document.getElementById('email').value,
+        password: document.getElementById('pass').value,
+        udid: document.getElementById('udid').value,
+        p12_password: document.getElementById('p12_pass').value
+    };
     const blob = new Blob([JSON.stringify(obj, null, 4)], {type : 'application/json'});
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
