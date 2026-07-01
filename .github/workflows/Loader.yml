@@ -20,21 +20,21 @@ jobs:
 
     - name: Instalar Dependencias de Python
       run: |
-        pip install requests
+        pip install requests urllib3
 
     - name: Iniciar Servidor Anisette Oficial (Docker)
       run: |
         docker run -d --name anisette -p 6969:6969 dadoum/anisette-v3-server
         sleep 5
 
-    - name: Ejecutar Procesador de Firmas Apple
+    - name: Ejecutar Procesador de Firmas Apple Bypass SSL
       run: |
         python script.py
 
     - name: Subir Certificados Reales a GitHub
       uses: actions/upload-artifact@v4
       with:
-        name: Mis-Certificados-Reales
+        name: Certificados-IPA-Listos
         path: |
           *.p12
           *.mobileprovision
