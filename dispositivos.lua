@@ -1,27 +1,14 @@
-local http = require("http")
 local fs = require("fs")
+local http = require("http")
 
-local function solicitarCertificados()
-    print("[+] Obteniendo firmas criptográficas...")
-    local anisetteData = http.request("http://localhost:6969/").json()
+local function ejecutarFirma()
     local config = json.decode(fs.read("config.json"))
+    local claveP12 = config.p12_password or "123456"
 
-    local headers = {
-        ["X-Apple-I-MD"] = anisetteData["X-Apple-I-MD"],
-        ["X-Mme-Device-Id"] = anisetteData["X-MMe-Device-Id"]
-    }
+    print("[+] Inicializando empaquetado desde entorno Lua...")
+    print("[+] Clave elegida por el usuario: " .. claveP12)
 
-    print("[+] Descargando desde Apple Portal (Omitiendo Verificación SSL)...")
-    local response = http.request({
-        url = "https://developerservices2.apple.com/services/QH65B2/ios/downloadTeamProvisioningProfile.action",
-        method = "POST",
-        headers = headers,
-        ssl_verify = false, -- Fuerza al motor HTTP de Lua a ignorar el error del certificado chain
-        body = { apple_id = config.apple_id }
-    })
-
-    if response.status_code == 200 then
-        fs.write("ios_development.p12", "wb", response.body)
-        print("[+] Fichero .p12 guardado en el entorno local.")
-    end
+    -- Guardar logs del estado del proceso
+    fs.write("registro_firma.txt", "wb", "UDID: " .. config.udid .. "\nClave P12: " .. claveP12)
+    print("[+] Archivos de registro actualizados con éxito.")
 end
