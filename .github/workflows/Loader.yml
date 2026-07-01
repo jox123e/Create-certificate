@@ -27,43 +27,42 @@ jobs:
         docker run -d --name anisette -p 6969:6969 dadoum/anisette-v3-server
         sleep 5
 
-    - name: Crear el Script de Python
+    - name: Crear el Script de Extracción de Keys
       run: |
         cat << 'EOF' > script.py
         import sys
         import requests
         import json
 
-        print('[+] Conectando al servidor Anisette local...')
+        print('[+] Conectando al servidor Anisette local para extraer llaves...')
         
         try:
+            # Solicitamos los datos reales generados por el servidor
             res = requests.get('http://localhost:6969/', timeout=10)
-            anisette_headers = res.json()
-            print('[+] Firmas Anisette locales obtenidas correctamente.')
-        except Exception as e:
-            print(f'[-] Error: No se pudo procesar la respuesta del servidor: {e}')
-            sys.exit(1)
-
-        print('[+] Procediendo con el proceso de empaquetado...')
-        
-        # EXPLICACIÓN: Aquí escribimos los archivos al disco para que GitHub los encuentre
-        with open("certificado.p12", "w") as f:
-            f.write("CONTENIDO_DE_TU_CERTIFICADO_AQUI")
+            data = res.json()
             
-        with open("perfil.mobileprovision", "w") as f:
-            f.write("CONTENIDO_DE_TU_PERFIL_AQUI")
-
-        print('[+] Archivos guardados en el disco correctamente.')
+            # Formateamos el JSON de manera limpia y legible
+            contenido_formateado = json.dumps(data, indent=4)
+            
+            # Guardamos la Key y todas las firmas dentro de un archivo TXT real
+            with open("credenciales.txt", "w") as f:
+                f.write("=== LLAVES DE AUTENTICACIÓN APPLE (ANISETTE DATA) ===\n\n")
+                f.write(contenido_formateado)
+                
+            print('[+] Archivo credenciales.txt generado exitosamente con las llaves.')
+            
+        except Exception as e:
+            print(f'[-] Error al extraer los datos del servidor: {e}')
+            sys.exit(1)
         EOF
 
-    - name: Ejecutar Script de Firmas
+    - name: Ejecutar Script de Extracción
       run: |
         python script.py
 
-    - name: Subir Archivos Resultantes a GitHub
+    - name: Subir Llaves Resultantes a GitHub
       uses: actions/upload-artifact@v4
       with:
-        name: Certificados-IPA-Listos
+        name: Mis-Llaves-Anisette
         path: |
-          *.p12
-          *.mobileprovision
+          credenciales.txt
