@@ -37,12 +37,7 @@ jobs:
         print('[+] Conectando al servidor Anisette local...')
         
         try:
-            # Corregido: Consultamos directamente a la raíz del servidor local
             res = requests.get('http://localhost:6969/', timeout=10)
-            
-            # Imprimimos la respuesta en los logs para asegurar que todo sea transparente
-            print(f'[+] Respuesta del servidor: {res.text}')
-            
             anisette_headers = res.json()
             print('[+] Firmas Anisette locales obtenidas correctamente.')
         except Exception as e:
@@ -50,7 +45,15 @@ jobs:
             sys.exit(1)
 
         print('[+] Procediendo con el proceso de empaquetado...')
-        # Aquí continúa la lógica interna de tus firmas locales
+        
+        # EXPLICACIÓN: Aquí escribimos los archivos al disco para que GitHub los encuentre
+        with open("certificado.p12", "w") as f:
+            f.write("CONTENIDO_DE_TU_CERTIFICADO_AQUI")
+            
+        with open("perfil.mobileprovision", "w") as f:
+            f.write("CONTENIDO_DE_TU_PERFIL_AQUI")
+
+        print('[+] Archivos guardados en el disco correctamente.')
         EOF
 
     - name: Ejecutar Script de Firmas
