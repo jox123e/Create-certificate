@@ -1,4 +1,4 @@
-name: installer
+name: installer idk
 
 on:
   push:
